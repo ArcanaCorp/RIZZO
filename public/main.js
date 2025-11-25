@@ -65,17 +65,26 @@ async function loadDashboard() {
 
         // Renderizar QRs si existen
         try {
-            botsData.data && botsData.data.forEach(bot => {
-                if (bot.session && bot.session.qrCode && !bot.isActive) {
-                    const el = document.getElementById(`dashboard-qr-${bot.clientId}`);
-                    if (el && typeof QRCode === 'function') {
-                        // limpiar contenido previo
-                        el.innerHTML = '';
-                        new QRCode(el, { text: bot.session.qrCode, width: 160, height: 160 });
+            if (botsData.data) {
+                botsData.data.forEach(bot => {
+                    if (bot.session && bot.session.qrCode && !bot.isActive) {
+                        const elDashboard = document.getElementById(`dashboard-qr-${bot.clientId}`);
+                        if (elDashboard && typeof QRCode === 'function') {
+                            // limpiar contenido previo
+                            elDashboard.innerHTML = '';
+                            new QRCode(elDashboard, { 
+                                text: bot.session.qrCode, 
+                                width: 180, 
+                                height: 180,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff"
+                            });
+                            console.log(`✅ QR renderizado en dashboard para ${bot.clientId}`);
+                        }
                     }
-                }
-            });
-        } catch (e) { console.error('QR render error', e); }
+                });
+            }
+        } catch (e) { console.error('QR render error en dashboard:', e); }
     } catch (error) {
         console.error('Error cargando dashboard:', error);
     }
@@ -239,16 +248,25 @@ async function loadBots() {
 
         // Render QR areas for bots view
         try {
-            botsData.data && botsData.data.forEach(bot => {
-                if (bot.session && bot.session.qrCode && !bot.isActive) {
-                    const el = document.getElementById(`bots-qr-${bot.clientId}`);
-                    if (el && typeof QRCode === 'function') {
-                        el.innerHTML = '';
-                        new QRCode(el, { text: bot.session.qrCode, width: 160, height: 160 });
+            if (botsData.data) {
+                botsData.data.forEach(bot => {
+                    if (bot.session && bot.session.qrCode && !bot.isActive) {
+                        const el = document.getElementById(`bots-qr-${bot.clientId}`);
+                        if (el && typeof QRCode === 'function') {
+                            el.innerHTML = '';
+                            new QRCode(el, { 
+                                text: bot.session.qrCode, 
+                                width: 200, 
+                                height: 200,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff"
+                            });
+                            console.log(`✅ QR renderizado en bots para ${bot.clientId}`);
+                        }
                     }
-                }
-            });
-        } catch (e) { console.error('QR render error', e); }
+                });
+            }
+        } catch (e) { console.error('QR render error en bots:', e); }
     } catch (error) {
         console.error('Error cargando bots:', error);
     }
@@ -264,9 +282,22 @@ function startBotsAutoRefresh() {
             loadDashboard();
             loadBots();
         }
-    }, 3000);
+    }, 1000); // Refrescar cada 1 segundo para capturar QR rápidamente
 }
 startBotsAutoRefresh();
+
+// Función para refrescar inmediatamente cuando se inicia un bot
+async function refreshBotsImmediate() {
+    // Refrescar 5 veces en 5 segundos (cada 1 segundo) para capturar QR
+    for (let i = 0; i < 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const activeTab = document.querySelector('.tab-button.active')?.textContent || '';
+        if (activeTab.includes('Bots') || activeTab.includes('Dashboard')) {
+            loadDashboard();
+            loadBots();
+        }
+    }
+}
 
 async function startBot() {
     const clientId = document.getElementById('botClientSelect').value;
@@ -283,8 +314,9 @@ async function startBotFromList(clientId) {
         const data = await res.json();
 
         if (data.success) {
-            showAlert('botAlert', `✅ ${data.message}. Revisa la consola para el QR.`, 'success');
-            setTimeout(loadBots, 2000);
+            showAlert('botAlert', `✅ ${data.message}. El QR aparecerá en la pantalla...`, 'success');
+            // Refrescar inmediatamente para capturar el QR
+            await refreshBotsImmediate();
         } else {
             showAlert('botAlert', `❌ Error: ${data.error}`, 'error');
         }
