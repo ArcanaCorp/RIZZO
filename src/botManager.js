@@ -34,7 +34,12 @@ class BotManager {
             }),
             puppeteer: {
                 headless: true,
-                args: ["--no-sandbox"],
+                args: [
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu"
+                ]
             }
         });
 
@@ -48,9 +53,16 @@ class BotManager {
 
         // Evento: QR Code
         botClient.on("qr", qr => {
-            console.log(chalk.yellow(`\n🔐 QR para cliente: ${clientId}`));
-            qrcode.generate(qr, { small: true });
+            console.log(chalk.yellow(`\n🔐 QR Code generado para cliente: ${clientId}`));
+            
+            // En desarrollo, mostrar en terminal
+            if (process.env.NODE_ENV !== 'production') {
+                qrcode.generate(qr, { small: true });
+            }
+            
+            // Guardar QR en la sesión para que se muestre en la UI
             database.updateSession(clientId, { qrCode: qr });
+            console.log(chalk.cyan(`📱 Escanea el QR desde el dashboard: http://localhost:8080`));
         });
 
         // Evento: Bot listo

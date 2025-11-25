@@ -35,10 +35,22 @@ app.get("/api/info", (req, res) => {
 
 // Iniciar servidor
 app.listen(PORT, "0.0.0.0", () => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const baseUrl = isProduction 
+        ? `https://${process.env.RAILWAY_STATIC_URL || 'tu-app.up.railway.app'}`
+        : `http://localhost:${PORT}`;
+    
     console.log(chalk.green(`\n🚀 Servidor RIZZO iniciado en puerto ${PORT}`));
-    console.log(chalk.cyan(`📍 URL: http://localhost:${PORT}`));
-    console.log(chalk.cyan(`📊 Panel: http://localhost:${PORT}`));
-    console.log(chalk.cyan(`📚 API: http://localhost:${PORT}/api\n`));
+    console.log(chalk.cyan(`📍 URL: ${baseUrl}`));
+    console.log(chalk.cyan(`📊 Panel: ${baseUrl}`));
+    console.log(chalk.cyan(`📚 API: ${baseUrl}/api`));
+    
+    if (isProduction) {
+        console.log(chalk.yellow(`⚠️  Modo: PRODUCCIÓN`));
+    } else {
+        console.log(chalk.blue(`ℹ️  Modo: DESARROLLO`));
+    }
+    console.log();
 });
 
 // Graceful shutdown
