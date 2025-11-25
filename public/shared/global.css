@@ -1,0 +1,53 @@
+* {
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    user-select: none;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    position: relative;
+    width: 100dvw;
+    height: 100dvh;
+    overflow-x: hidden;
+    color: var(--color-dark);
+    font-size: var(--font-size-sm);
+    background-color: var(--color-background);
+}
+
+input, select, textarea {
+    background: none;
+    font-family: var(--font-family);
+}
+
+ul, li, ol {
+    list-style: none;
+}
+
+button {
+    cursor: pointer;
+}
+
+img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+a {
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--color-primary);
+}
+
+.tabler-icon {
+    stroke-width: 1.2;
+}
