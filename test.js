@@ -5,7 +5,7 @@
 
 import database from "./src/database.js";
 import botManager from "./src/botManager.js";
-import { loadFlow } from "./src/flowLoader.js";
+import { loadFlow } from "./src/flowloader.js";
 import chalk from "chalk";
 
 async function runTests() {

@@ -34,7 +34,7 @@ app.get("/api/info", (req, res) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(chalk.green(`\n🚀 Servidor RIZZO iniciado en puerto ${PORT}`));
     console.log(chalk.cyan(`📍 URL: http://localhost:${PORT}`));
     console.log(chalk.cyan(`📊 Panel: http://localhost:${PORT}`));
