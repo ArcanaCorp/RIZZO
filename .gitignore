@@ -1,0 +1,16 @@
+node_modules/
+.wwebjs_cache/
+.env
+.env.local
+.DS_Store
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+dist/
+build/
+clients/*/session-*
+clients/*/.wwebjs_cache
+data/database.json

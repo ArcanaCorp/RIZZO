@@ -1,0 +1,24 @@
+{
+  "port": 3000,
+  "environment": "development",
+  "logging": {
+    "enabled": true,
+    "level": "info",
+    "logDir": "./logs"
+  },
+  "whatsapp": {
+    "headless": true,
+    "sandbox": false,
+    "qrTimeout": 30000
+  },
+  "database": {
+    "type": "json",
+    "path": "./data/database.json"
+  },
+  "defaultFlow": "default",
+  "availableFlows": [
+    "default",
+    "foodies",
+    "hotel"
+  ]
+}

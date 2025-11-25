@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RIZZO - WhatsApp Bot Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            background: #f8f9fa;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-button:hover {
+            background: #eee;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card h3 {
+            color: #333;
+            margin: 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-inactive {
+            background: #6b7280;
+            color: white;
+        }
+
+        .status-pending {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.9em;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+            display: block;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #7f1d1d;
+            border: 1px solid #fca5a5;
+            display: block;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .clients-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 RIZZO</h1>
+            <p>WhatsApp Bot Manager - Plataforma de Gestión</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-button" onclick="switchTab('clients')">👥 Clientes</button>
+            <button class="tab-button" onclick="switchTab('bots')">🤖 Bots</button>
+        </div>
+
+        <!-- TAB: Dashboard -->
+        <div id="dashboard" class="tab-content active">
+            <h2>Dashboard</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div class="card">
+                    <div class="info-row">
+                        <span class="info-label">Total Clientes:</span>
+                        <span class="info-value" id="totalClients">-</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="info-row">
+                        <span class="info-label">Bots Activos:</span>
+                        <span class="info-value" id="activeBots">-</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="info-row">
+                        <span class="info-label">Estado API:</span>
+                        <span class="info-value"><span class="status-badge status-active">Conectado</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px; margin-bottom: 20px;">Estado de Bots en Tiempo Real</h3>
+            <div id="botsStatus" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <div class="empty-state">
+                    <p>Cargando información...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Clientes -->
+        <div id="clients" class="tab-content">
+            <h2>Gestión de Clientes</h2>
+
+            <div id="clientAlert" class="alert"></div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3 style="margin-bottom: 20px;">Crear Nuevo Cliente</h3>
+                <form id="clientForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group" style="grid-column: span 1;">
+                        <label>ID del Cliente</label>
+                        <input type="text" id="clientId" placeholder="ej: client001" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 1;">
+                        <label>Nombre</label>
+                        <input type="text" id="clientName" placeholder="ej: Mi Restaurante" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 1;">
+                        <label>Email</label>
+                        <input type="email" id="clientEmail" placeholder="ej: admin@mirestaurante.com" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 1;">
+                        <label>Teléfono WhatsApp</label>
+                        <input type="text" id="clientPhone" placeholder="ej: +51987654321" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 1;">
+                        <label>Flujo Inicial</label>
+                        <select id="clientFlow">
+                            <option value="default">Default</option>
+                            <option value="foodies">Foodies (Restaurante)</option>
+                            <option value="hotel">Hotel</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="createClient()" style="grid-column: span 1; align-self: flex-end;">Crear Cliente</button>
+                </form>
+            </div>
+
+            <h3 style="margin-bottom: 20px;">Clientes Registrados</h3>
+            <div id="clientsList" class="clients-grid">
+                <div class="empty-state">
+                    <p>Cargando clientes...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Bots -->
+        <div id="bots" class="tab-content">
+            <h2>Control de Bots</h2>
+
+            <div id="botAlert" class="alert"></div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3 style="margin-bottom: 20px;">Iniciar Bot para Cliente</h3>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: flex-end;">
+                    <div class="form-group" style="margin: 0;">
+                        <label>Seleccionar Cliente</label>
+                        <select id="botClientSelect">
+                            <option value="">-- Seleccionar cliente --</option>
+                        </select>
+                    </div>
+                    <button type="button" onclick="startBot()">Iniciar Bot</button>
+                </div>
+            </div>
+
+            <h3 style="margin-bottom: 20px;">Bots Activos</h3>
+            <div id="botsControl" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <div class="empty-state">
+                    <p>Cargando bots...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biblioteca para generar códigos QR en el navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        const API_URL = "http://localhost:3000/api";
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard') loadDashboard();
+            if (tabName === 'clients') loadClients();
+            if (tabName === 'bots') loadBots();
+        }
+
+        async function loadDashboard() {
+            try {
+                const clientsRes = await fetch(`${API_URL}/clients`);
+                const clientsData = await clientsRes.json();
+                const totalClients = clientsData.data ? clientsData.data.length : 0;
+
+                const botsRes = await fetch(`${API_URL}/bots/status/all`);
+                const botsData = await botsRes.json();
+                const activeBots = botsData.data ? botsData.data.filter(b => b.isActive).length : 0;
+
+                document.getElementById('totalClients').textContent = totalClients;
+                document.getElementById('activeBots').textContent = activeBots;
+
+                // Mostrar bots activos
+                let html = '';
+                if (botsData.data && botsData.data.length > 0) {
+                    botsData.data.forEach(bot => {
+                        const statusClass = bot.isActive ? 'status-active' : 'status-inactive';
+                        const statusText = bot.isActive ? 'Activo' : 'Inactivo';
+                        html += `
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>${bot.clientName}</h3>
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">ID:</span>
+                                    <span class="info-value">${bot.clientId}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Flujo:</span>
+                                    <span class="info-value">${bot.flow || 'default'}</span>
+                                </div>
+                                ${bot.session && bot.session.qrCode && !bot.isActive ?
+                                    `<div style="margin-top:10px;text-align:center;">
+                                        <div id="dashboard-qr-${bot.clientId}"></div>
+                                        <small>Escanea este QR desde la app de WhatsApp</small>
+                                    </div>` : ''
+                                }
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="empty-state"><p>No hay bots registrados</p></div>';
+                }
+                document.getElementById('botsStatus').innerHTML = html;
+
+                // Renderizar QRs si existen
+                try {
+                    botsData.data && botsData.data.forEach(bot => {
+                        if (bot.session && bot.session.qrCode && !bot.isActive) {
+                            const el = document.getElementById(`dashboard-qr-${bot.clientId}`);
+                            if (el && typeof QRCode === 'function') {
+                                // limpiar contenido previo
+                                el.innerHTML = '';
+                                new QRCode(el, { text: bot.session.qrCode, width: 160, height: 160 });
+                            }
+                        }
+                    });
+                } catch (e) { console.error('QR render error', e); }
+            } catch (error) {
+                console.error('Error cargando dashboard:', error);
+            }
+        }
+
+        async function loadClients() {
+            try {
+                const res = await fetch(`${API_URL}/clients`);
+                const data = await res.json();
+                let html = '';
+
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(client => {
+                        const statusClass = client.status === 'active' ? 'status-active' : 'status-inactive';
+                        html += `
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>${client.name}</h3>
+                                    <span class="status-badge ${statusClass}">${client.status === 'active' ? 'Activo' : 'Inactivo'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">ID:</span>
+                                    <span class="info-value">${client.id}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Email:</span>
+                                    <span class="info-value">${client.email}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Teléfono:</span>
+                                    <span class="info-value">${client.phone}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Flujo:</span>
+                                    <span class="info-value">${client.flow}</span>
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="btn-warning" onclick="editClient('${client.id}')">Editar</button>
+                                    <button class="btn-danger" onclick="deleteClient('${client.id}')">Eliminar</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="empty-state"><h3>Sin clientes</h3><p>Crea tu primer cliente para empezar</p></div>';
+                }
+
+                document.getElementById('clientsList').innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando clientes:', error);
+            }
+        }
+
+        async function createClient() {
+            const clientId = document.getElementById('clientId').value;
+            const name = document.getElementById('clientName').value;
+            const email = document.getElementById('clientEmail').value;
+            const phone = document.getElementById('clientPhone').value;
+            const flow = document.getElementById('clientFlow').value;
+
+            if (!clientId || !name || !email || !phone) {
+                showAlert('clientAlert', 'Por favor completa todos los campos', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/clients`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, name, email, phone, flow })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert('clientAlert', '✅ Cliente creado exitosamente', 'success');
+                    document.getElementById('clientForm').reset();
+                    setTimeout(loadClients, 1500);
+                } else {
+                    showAlert('clientAlert', `❌ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('clientAlert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteClient(clientId) {
+            if (!confirm(`¿Estás seguro de que quieres eliminar el cliente ${clientId}?`)) return;
+
+            try {
+                const res = await fetch(`${API_URL}/clients/${clientId}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert('clientAlert', '✅ Cliente eliminado exitosamente', 'success');
+                    setTimeout(loadClients, 1500);
+                } else {
+                    showAlert('clientAlert', `❌ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('clientAlert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadBots() {
+            try {
+                // Cargar clientes para el selector
+                const clientsRes = await fetch(`${API_URL}/clients`);
+                const clientsData = await clientsRes.json();
+                let selectHtml = '<option value="">-- Seleccionar cliente --</option>';
+                if (clientsData.data) {
+                    clientsData.data.forEach(client => {
+                        selectHtml += `<option value="${client.id}">${client.name} (${client.id})</option>`;
+                    });
+                }
+                document.getElementById('botClientSelect').innerHTML = selectHtml;
+
+                // Cargar bots activos
+                const botsRes = await fetch(`${API_URL}/bots/status/all`);
+                const botsData = await botsRes.json();
+                let html = '';
+
+                if (botsData.data && botsData.data.length > 0) {
+                    botsData.data.forEach(bot => {
+                        const statusClass = bot.isActive ? 'status-active' : 'status-inactive';
+                        const statusText = bot.isActive ? 'Activo' : 'Inactivo';
+                        html += `
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>${bot.clientName}</h3>
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Cliente ID:</span>
+                                    <span class="info-value">${bot.clientId}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Flujo:</span>
+                                    <span class="info-value">${bot.flow}</span>
+                                </div>
+                                ${bot.session && bot.session.qrCode && !bot.isActive ?
+                                    `<div style="margin-top:10px;text-align:center;">
+                                        <div id="bots-qr-${bot.clientId}"></div>
+                                        <small>Escanea este QR desde la app de WhatsApp</small>
+                                    </div>` : ''
+                                }
+                                <div class="action-buttons">
+                                    ${bot.isActive ? 
+                                        `<button class="btn-danger" onclick="stopBot('${bot.clientId}')">Detener Bot</button>` :
+                                        `<button class="btn-success" onclick="startBotFromList('${bot.clientId}')">Iniciar Bot</button>`
+                                    }
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="empty-state"><p>No hay bots</p></div>';
+                }
+
+                document.getElementById('botsControl').innerHTML = html;
+
+                // Render QR areas for bots view
+                try {
+                    botsData.data && botsData.data.forEach(bot => {
+                        if (bot.session && bot.session.qrCode && !bot.isActive) {
+                            const el = document.getElementById(`bots-qr-${bot.clientId}`);
+                            if (el && typeof QRCode === 'function') {
+                                el.innerHTML = '';
+                                new QRCode(el, { text: bot.session.qrCode, width: 160, height: 160 });
+                            }
+                        }
+                    });
+                } catch (e) { console.error('QR render error', e); }
+            } catch (error) {
+                console.error('Error cargando bots:', error);
+            }
+        }
+
+        // Refrescar bots periódicamente para capturar QR si se genera
+        let botsRefreshInterval = null;
+        function startBotsAutoRefresh() {
+            if (botsRefreshInterval) return;
+            botsRefreshInterval = setInterval(() => {
+                const activeTab = document.querySelector('.tab-button.active')?.textContent || '';
+                if (activeTab.includes('Bots') || activeTab.includes('Dashboard')) {
+                    loadDashboard();
+                    loadBots();
+                }
+            }, 3000);
+        }
+        startBotsAutoRefresh();
+
+        async function startBot() {
+            const clientId = document.getElementById('botClientSelect').value;
+            if (!clientId) {
+                showAlert('botAlert', 'Por favor selecciona un cliente', 'error');
+                return;
+            }
+            await startBotFromList(clientId);
+        }
+
+        async function startBotFromList(clientId) {
+            try {
+                const res = await fetch(`${API_URL}/bots/${clientId}/start`, { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert('botAlert', `✅ ${data.message}. Revisa la consola para el QR.`, 'success');
+                    setTimeout(loadBots, 2000);
+                } else {
+                    showAlert('botAlert', `❌ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('botAlert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopBot(clientId) {
+            try {
+                const res = await fetch(`${API_URL}/bots/${clientId}/stop`, { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    showAlert('botAlert', `✅ ${data.message}`, 'success');
+                    setTimeout(loadBots, 1500);
+                } else {
+                    showAlert('botAlert', `❌ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showAlert('botAlert', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => { alert.style.display = 'none'; }, 5000);
+        }
+
+        // Cargar dashboard al iniciar
+        loadDashboard();
+    </script>
+</body>
+</html>
