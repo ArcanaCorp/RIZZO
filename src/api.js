@@ -2,7 +2,7 @@ import express from "express";
 import chalk from "chalk";
 import database from "./database.js";
 import botManager from "./botManager.js";
-import { loadFlow } from "./flowLoader.js";
+import { loadFlow } from "./flowloader.js";
 
 const router = express.Router();
 

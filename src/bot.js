@@ -1,7 +1,7 @@
 import pkg from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
 import chalk from "chalk";
-import { loadFlow } from "./flowLoader.js";
+import { loadFlow } from "./flowloader.js";
 import { logMessage } from "./logger.js";
 
 const { Client, LocalAuth } = pkg;

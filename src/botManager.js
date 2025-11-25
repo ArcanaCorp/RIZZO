@@ -3,7 +3,7 @@ import qrcode from "qrcode-terminal";
 import chalk from "chalk";
 import path from "path";
 import database from "./database.js";
-import { loadFlow } from "./flowLoader.js";
+import { loadFlow } from "./flowloader.js";
 import { logMessage } from "./logger.js";
 
 const { Client, LocalAuth } = pkg;
