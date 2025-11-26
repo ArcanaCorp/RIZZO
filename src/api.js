@@ -10,8 +10,11 @@ const router = express.Router();
 function sanitizeSession(session) {
     if (!session) return null;
     const { botInstance, client, ...rest } = session;
-    // devolver sólo campos serializables
-    return rest;
+    // devolver sólo campos serializables, pero preservar qrCode
+    return {
+        ...rest,
+        qrCode: session.qrCode || null  // Asegurar que qrCode se incluya
+    };
 }
 
 // ==================== CLIENTES ====================
@@ -173,12 +176,43 @@ router.post("/bots/:clientId/start", async (req, res) => {
             });
         }
 
-        const bot = await botManager.createBotForClient(clientId);
+        let result;
+        try {
+            result = await botManager.createBotForClient(clientId);
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                error: `Error al crear bot: ${error.message}`
+            });
+        }
+
+        const { botClient, qrPromise } = result;
+
+        // Esperar el QR con un timeout de 30 segundos (más tiempo para que WhatsApp genere el QR)
+        let qrCode = null;
+        try {
+            qrCode = await Promise.race([
+                qrPromise,
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Timeout esperando QR")), 30000)
+                )
+            ]);
+            console.log(chalk.green(`✅ QR obtenido para ${clientId}`));
+        } catch (timeoutError) {
+            console.log(chalk.yellow(`⚠️  QR no generado en tiempo límite para ${clientId}. Continuando...`));
+            // No rechazamos, continuamos sin QR
+        }
 
         res.json({
             success: true,
-            message: `Bot iniciado para cliente: ${clientId}. Escanea el QR en la consola.`
+            message: `Bot iniciado para cliente: ${clientId}`,
+            data: {
+                clientId,
+                status: "initializing",
+                qrCode: qrCode || null
+            }
         });
+        
     } catch (error) {
         res.status(500).json({
             success: false,

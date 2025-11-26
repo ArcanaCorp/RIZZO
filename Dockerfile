@@ -1,3 +1,12 @@
+FROM node:22 as builder
+
+# Builder: instalar dependencias de frontend y generar build (Vite)
+WORKDIR /build
+COPY frontend/package*.json ./frontend/
+RUN cd frontend && npm ci
+COPY frontend ./frontend
+RUN cd frontend && npm run build
+
 FROM node:22-alpine
 
 # Instalar dependencias del sistema necesarias para Puppeteer/Chromium
@@ -14,17 +23,17 @@ RUN apk add --no-cache \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# Crear directorio de trabajo
 WORKDIR /app
 
-# Copiar package.json y package-lock.json
+# Copiar package.json y lock e instalar dependencias de producción
 COPY package*.json ./
-
-# Instalar dependencias de Node
 RUN npm ci --only=production
 
-# Copiar el resto de la aplicación
+# Copiar la aplicación
 COPY . .
+
+# Copiar build del frontend desde la etapa builder a la carpeta pública
+COPY --from=builder /build/frontend/dist /app/public
 
 # Crear directorio de datos
 RUN mkdir -p /app/data

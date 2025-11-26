@@ -5,6 +5,12 @@ const API_URL = (() => {
     return `${protocol}//${host}/api`;
 })();
 
+function generateClientId() {
+    const timestamp = Date.now(); // milisegundos
+    const random = Math.random().toString(16).substring(2, 8); // 6 chars hex
+    return `client_${timestamp}_${random}`;
+}
+
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
@@ -35,6 +41,8 @@ async function loadDashboard() {
             botsData.data.forEach(bot => {
                 const statusClass = bot.isActive ? 'status-active' : 'status-inactive';
                 const statusText = bot.isActive ? 'Activo' : 'Inactivo';
+                const hasQR = bot.session && bot.session.qrCode && !bot.isActive;
+                
                 html += `
                     <div class="card">
                         <div class="card-header">
@@ -49,29 +57,28 @@ async function loadDashboard() {
                             <span class="info-label">Flujo:</span>
                             <span class="info-value">${bot.flow || 'default'}</span>
                         </div>
-                        ${bot.session && bot.session.qrCode && !bot.isActive ?
-                            `<div style="margin-top:10px;text-align:center;">
-                                <div id="dashboard-qr-${bot.clientId}"></div>
-                                <small>Escanea este QR desde la app de WhatsApp</small>
-                            </div>` : ''
-                        }
+                        ${hasQR ? `
+                            <div style="margin-top:15px; text-align:center; padding:15px; background:#f9f9f9; border-radius:6px;">
+                                <div id="dashboard-qr-${bot.clientId}" style="display:inline-block;"></div>
+                                <small style="display:block; margin-top:10px; color:#666;">Escanea este QR desde la app de WhatsApp</small>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
         } else {
-            html = '<div class="empty-state"><p>No hay bots registrados</p></div>';
+            html = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#999;"><p>No hay bots registrados</p></div>';
         }
         document.getElementById('botsStatus').innerHTML = html;
 
-        // Renderizar QRs si existen
-        try {
-            if (botsData.data) {
-                botsData.data.forEach(bot => {
-                    if (bot.session && bot.session.qrCode && !bot.isActive) {
-                        const elDashboard = document.getElementById(`dashboard-qr-${bot.clientId}`);
-                        if (elDashboard && typeof QRCode === 'function') {
-                            // limpiar contenido previo
-                            elDashboard.innerHTML = '';
+        // Renderizar QRs
+        if (botsData.data && typeof QRCode !== 'undefined') {
+            botsData.data.forEach(bot => {
+                if (bot.session && bot.session.qrCode && !bot.isActive) {
+                    const elDashboard = document.getElementById(`dashboard-qr-${bot.clientId}`);
+                    if (elDashboard) {
+                        elDashboard.innerHTML = '';
+                        try {
                             new QRCode(elDashboard, { 
                                 text: bot.session.qrCode, 
                                 width: 180, 
@@ -80,11 +87,13 @@ async function loadDashboard() {
                                 colorLight: "#ffffff"
                             });
                             console.log(`✅ QR renderizado en dashboard para ${bot.clientId}`);
+                        } catch (err) {
+                            console.error(`Error renderizando QR para ${bot.clientId}:`, err);
                         }
                     }
-                });
-            }
-        } catch (e) { console.error('QR render error en dashboard:', e); }
+                }
+            });
+        }
     } catch (error) {
         console.error('Error cargando dashboard:', error);
     }
@@ -139,7 +148,7 @@ async function loadClients() {
 }
 
 async function createClient() {
-    const clientId = document.getElementById('clientId').value;
+    const clientId = generateClientId();
     const name = document.getElementById('clientName').value;
     const email = document.getElementById('clientEmail').value;
     const phone = document.getElementById('clientPhone').value;
@@ -211,8 +220,10 @@ async function loadBots() {
             botsData.data.forEach(bot => {
                 const statusClass = bot.isActive ? 'status-active' : 'status-inactive';
                 const statusText = bot.isActive ? 'Activo' : 'Inactivo';
+                const hasQR = bot.session && bot.session.qrCode && !bot.isActive;
+                
                 html += `
-                    <div class="card">
+                    <div class="card" data-bot-id="${bot.clientId}">
                         <div class="card-header">
                             <h3>${bot.clientName}</h3>
                             <span class="status-badge ${statusClass}">${statusText}</span>
@@ -225,12 +236,12 @@ async function loadBots() {
                             <span class="info-label">Flujo:</span>
                             <span class="info-value">${bot.flow}</span>
                         </div>
-                        ${bot.session && bot.session.qrCode && !bot.isActive ?
-                            `<div style="margin-top:10px;text-align:center;">
-                                <div id="bots-qr-${bot.clientId}"></div>
-                                <small>Escanea este QR desde la app de WhatsApp</small>
-                            </div>` : ''
-                        }
+                        ${hasQR ? `
+                            <div data-qr-container="${bot.clientId}" style="margin-top:15px; text-align:center; padding:15px; background:#f9f9f9; border-radius:6px;">
+                                <div id="bots-qr-${bot.clientId}" style="display:inline-block;"></div>
+                                <small style="display:block; margin-top:10px; color:#666;">Escanea este QR desde la app de WhatsApp</small>
+                            </div>
+                        ` : ''}
                         <div class="action-buttons">
                             ${bot.isActive ? 
                                 `<button class="btn-danger" onclick="stopBot('${bot.clientId}')">Detener Bot</button>` :
@@ -241,19 +252,19 @@ async function loadBots() {
                 `;
             });
         } else {
-            html = '<div class="empty-state"><p>No hay bots</p></div>';
+            html = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#999;"><p>No hay bots</p></div>';
         }
 
         document.getElementById('botsControl').innerHTML = html;
 
         // Render QR areas for bots view
-        try {
-            if (botsData.data) {
-                botsData.data.forEach(bot => {
-                    if (bot.session && bot.session.qrCode && !bot.isActive) {
-                        const el = document.getElementById(`bots-qr-${bot.clientId}`);
-                        if (el && typeof QRCode === 'function') {
-                            el.innerHTML = '';
+        if (botsData.data && typeof QRCode !== 'undefined') {
+            botsData.data.forEach(bot => {
+                if (bot.session && bot.session.qrCode && !bot.isActive) {
+                    const el = document.getElementById(`bots-qr-${bot.clientId}`);
+                    if (el) {
+                        el.innerHTML = '';
+                        try {
                             new QRCode(el, { 
                                 text: bot.session.qrCode, 
                                 width: 200, 
@@ -262,11 +273,13 @@ async function loadBots() {
                                 colorLight: "#ffffff"
                             });
                             console.log(`✅ QR renderizado en bots para ${bot.clientId}`);
+                        } catch (err) {
+                            console.error(`Error renderizando QR para ${bot.clientId}:`, err);
                         }
                     }
-                });
-            }
-        } catch (e) { console.error('QR render error en bots:', e); }
+                }
+            });
+        }
     } catch (error) {
         console.error('Error cargando bots:', error);
     }
@@ -312,16 +325,120 @@ async function startBotFromList(clientId) {
     try {
         const res = await fetch(`${API_URL}/bots/${clientId}/start`, { method: 'POST' });
         const data = await res.json();
-
+        console.log(data);
         if (data.success) {
-            showAlert('botAlert', `✅ ${data.message}. El QR aparecerá en la pantalla...`, 'success');
-            // Refrescar inmediatamente para capturar el QR
+            showAlert('botAlert', `✅ ${data.message}`, 'success');
+            
+            // Si hay QR en la respuesta, mostrarlo inmediatamente en el área dedicada
+            if (data.data && data.data.qrCode) {
+                console.log('✅ QR recibido en la respuesta inmediatamente');
+                displayQRInSeparateArea(clientId, data.data.qrCode);
+            }
+            
+            // Refrescar periódicamente por si el QR se genera después
             await refreshBotsImmediate();
         } else {
             showAlert('botAlert', `❌ Error: ${data.error}`, 'error');
         }
     } catch (error) {
         showAlert('botAlert', `❌ Error: ${error.message}`, 'error');
+    }
+}
+
+// Función para mostrar el QR en el área dedicada (div#show-qr)
+function displayQRInSeparateArea(clientId, qrCode) {
+    const showQRContainer = document.getElementById('show-qr');
+    if (!showQRContainer) {
+        console.error('Contenedor show-qr no encontrado');
+        return;
+    }
+    
+    // Obtener el nombre del cliente
+    const botCard = document.querySelector(`[data-bot-id="${clientId}"]`);
+    let clientName = 'Cliente';
+    if (botCard) {
+        const nameElement = botCard.querySelector('.card-header h3');
+        if (nameElement) {
+            clientName = nameElement.textContent;
+        }
+    }
+    
+    // Limpiar el contenedor
+    showQRContainer.innerHTML = '';
+    
+    // Crear la estructura del QR
+    const qrDisplay = document.createElement('div');
+    qrDisplay.style.cssText = `
+        background: white;
+        border: 2px solid #667eea;
+        border-radius: 12px;
+        padding: 30px;
+        margin-top: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    `;
+    
+    // Agregar título
+    const title = document.createElement('h3');
+    title.textContent = `📱 QR para ${clientName}`;
+    title.style.marginBottom = '20px';
+    title.style.color = '#333';
+    qrDisplay.appendChild(title);
+    
+    // Crear contenedor para el QR
+    const qrContainer = document.createElement('div');
+    qrContainer.id = `qr-display-${clientId}`;
+    qrContainer.style.cssText = `
+        display: inline-block;
+        margin: 0 auto 20px;
+    `;
+    qrDisplay.appendChild(qrContainer);
+    
+    // Agregar instrucciones
+    const instructions = document.createElement('div');
+    instructions.style.cssText = `
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+    `;
+    instructions.innerHTML = `
+        <p style="margin: 0; color: #666; font-size: 14px;">
+            <strong>Instrucciones:</strong> Abre WhatsApp en tu teléfono y escanea este código QR para conectar el bot.
+        </p>
+    `;
+    qrDisplay.appendChild(instructions);
+    
+    // Agregar botón para cerrar
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ Cerrar QR';
+    closeBtn.className = 'btn-warning';
+    closeBtn.style.marginTop = '15px';
+    closeBtn.onclick = () => {
+        showQRContainer.innerHTML = '';
+    };
+    qrDisplay.appendChild(closeBtn);
+    
+    showQRContainer.appendChild(qrDisplay);
+    
+    // Renderizar el QR
+    if (typeof QRCode !== 'undefined') {
+        try {
+            new QRCode(qrContainer, {
+                text: qrCode,
+                width: 250,
+                height: 250,
+                colorDark: "#000000",
+                colorLight: "#ffffff"
+            });
+            console.log(`✅ QR renderizado en show-qr para ${clientId}`);
+        } catch (err) {
+            console.error(`Error renderizando QR para ${clientId}:`, err);
+            qrContainer.innerHTML = '<p style="color:red;">Error al generar QR</p>';
+        }
+    } else {
+        console.warn('QRCode library no cargada');
+        qrContainer.innerHTML = '<p style="color:red;">Librería QRCode no disponible</p>';
     }
 }
 

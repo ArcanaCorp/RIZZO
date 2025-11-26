@@ -1,0 +1,1 @@
+// Archivo dummy para asegurar que el asset existe. Reemplaza este archivo con el build real de Vite.

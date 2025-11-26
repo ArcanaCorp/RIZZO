@@ -1,8 +1,8 @@
 import express from "express";
 import chalk from "chalk";
 import path from "path";
+import cors from 'cors';
 import { fileURLToPath } from "url";
-import database from "./src/database.js";
 import botManager from "./src/botManager.js";
 import apiRoutes from "./src/api.js";
 
@@ -11,7 +11,21 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const allowedOrigins = [
+    "http://localhost:3000",        // desarrollo
+    "http://localhost:5173",        // vite
+    "https://rizzo-production.up.railway.app/"
+];
 
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    optionsSuccessStatus: 200,
+}));
+
+// app.options("*", cors()); // No es necesario, el middleware cors ya cubre las OPTIONS
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));

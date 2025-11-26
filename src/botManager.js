@@ -51,6 +51,12 @@ class BotManager {
             startedAt: new Date().toISOString()
         });
 
+        // Promesa para esperar el QR
+        let qrPromiseResolve;
+        const qrPromise = new Promise(resolve => {
+            qrPromiseResolve = resolve;
+        });
+
         // Evento: QR Code
         botClient.on("qr", qr => {
             console.log(chalk.yellow(`\n🔐 QR Code generado para cliente: ${clientId}`));
@@ -63,6 +69,9 @@ class BotManager {
             // Guardar QR en la sesión para que se muestre en la UI
             database.updateSession(clientId, { qrCode: qr });
             console.log(chalk.cyan(`📱 Escanea el QR desde el dashboard: http://localhost:8080`));
+            
+            // Resolver la promesa con el QR
+            qrPromiseResolve(qr);
         });
 
         // Evento: Bot listo
@@ -111,8 +120,13 @@ class BotManager {
             console.error(chalk.red(`❌ Error en bot ${clientId}:`), error);
         });
 
-        // Inicializar cliente
-        await botClient.initialize();
+        // Inicializar cliente - esto dispara el evento 'qr'
+        try {
+            await botClient.initialize();
+        } catch (error) {
+            console.error(chalk.red(`❌ Error inicializando bot ${clientId}:`), error.message);
+            throw error;
+        }
 
         // Guardar en memoria (instancia en memoria SOLO)
         this.bots[clientId] = botClient;
@@ -121,20 +135,37 @@ class BotManager {
         database.updateSession(clientId, { botConnected: true, lastActivity: new Date().toISOString() });
 
         console.log(chalk.green(`✅ Bot creado para cliente: ${clientId}`));
-        return botClient;
+        
+        // Retornar objeto con la instancia del bot y la promesa para esperar el QR
+        // La promesa se resolverá cuando se genere el código QR
+        return { botClient, qrPromise };
     }
 
     async stopBot(clientId) {
         if (this.bots[clientId]) {
             try {
+                console.log(chalk.yellow(`⏹️  Deteniendo bot para cliente: ${clientId}`));
+                
+                // Dar tiempo para que se cierren conexiones
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Destruir el cliente
                 await this.bots[clientId].destroy();
+                
+                // Dar más tiempo después de destroy
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
                 delete this.bots[clientId];
                 database.removeSession(clientId);
                 database.updateClient(clientId, { status: "inactive" });
                 console.log(chalk.yellow(`⏹️  Bot detenido para cliente: ${clientId}`));
                 return true;
             } catch (error) {
-                console.error(chalk.red(`Error deteniendo bot ${clientId}:`), error);
+                console.error(chalk.red(`Error deteniendo bot ${clientId}:`), error.message);
+                // Intentar eliminar de todas formas
+                delete this.bots[clientId];
+                database.removeSession(clientId);
+                database.updateClient(clientId, { status: "inactive" });
                 return false;
             }
         }
